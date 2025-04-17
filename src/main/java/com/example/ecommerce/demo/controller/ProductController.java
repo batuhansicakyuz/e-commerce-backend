@@ -1,6 +1,7 @@
 package com.example.ecommerce.demo.controller;
 
 import com.example.ecommerce.demo.entity.Product;
+import com.example.ecommerce.demo.messaging.RabbitMQSender;
 import com.example.ecommerce.demo.service.ProductService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,6 +16,26 @@ import java.util.List;
 @RequestMapping("/api/products")
 public class ProductController {
     private final ProductService productService;
+    private final RabbitMQSender sender;
+
+    @Autowired
+    public ProductController(ProductService productService, RabbitMQSender sender) {
+        this.productService = productService;
+        this.sender = sender;
+    }
+
+    @GetMapping("/send")
+    public ResponseEntity<String> sendMessage() {
+        try {
+            sender.send("Hello from Spring Boot!");
+            return ResponseEntity.ok("Message sent successfully!");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to send message: " + e.getMessage());
+        }
+    }
+
+
 
     @GetMapping
     public ResponseEntity<List<Product>> getAllProducts() {
@@ -46,13 +67,6 @@ public class ProductController {
     @GetMapping("/search")
     public ResponseEntity<List<Product>> searchProducts(@RequestParam String keyword) {
         return ResponseEntity.ok(productService.searchProducts(keyword));
-    }
-
-
-    // Constructor injection
-    @Autowired // Spring 4.3+'te @Autowired optional oldu
-    public ProductController(ProductService productService) {
-        this.productService = productService;
     }
 }
 
